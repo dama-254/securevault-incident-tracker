@@ -10,7 +10,7 @@
 
   <div class="topbar">
     <div class="logo">🔐 SecureVault</div>
-    <div class="user" id="userLabel">...</div>
+    <div style="display:flex;align-items:center;gap:16px;"><div class="user" id="userLabel" title="Click to logout" style="cursor:pointer;">...</div><button onclick="logoutNow()" style="background:#DC2626;color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;">Logout</button></div>
   </div>
 
   <div class="layout">
@@ -114,6 +114,14 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script>
+async function logoutNow() {
+  if (confirm("Are you sure you want to logout?")) {
+    await fetch("/logout", { method: "POST", credentials: "include" });
+    window.location.href = "/login";
+  }
+}
+</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
