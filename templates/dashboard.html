@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SecureVault — Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="logo">🔐 SecureVault</div>
+    <div class="user" id="userLabel">...</div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <button class="nav-item active" data-tab="dashboardTab">Dashboard</button>
+      <button class="nav-item" data-tab="logTab">Log Incident</button>
+      <button class="nav-item" data-tab="analyticsTab">Analytics</button>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD TAB -->
+      <div class="tab-section active" id="dashboardTab">
+        <h1>Incident Dashboard</h1>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="card">
+          <div class="filters">
+            <select id="filterSeverity">
+              <option value="">Severity: All</option>
+              <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+            </select>
+            <select id="filterStatus">
+              <option value="">Status: All</option>
+              <option>Open</option><option>In Progress</option><option>Resolved</option>
+            </select>
+            <select id="filterCategory">
+              <option value="">Category: All</option>
+            </select>
+            <div class="spacer"></div>
+          </div>
+
+          <table>
+            <thead>
+              <tr><th>Title</th><th>Category</th><th>Severity</th><th>Status</th><th>Reported</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="incidentsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LOG INCIDENT TAB -->
+      <div class="tab-section" id="logTab">
+        <h1>Log New Incident</h1>
+        <div class="card">
+          <form id="incidentForm">
+            <div class="form-grid">
+              <div class="field full">
+                <label>Incident Title</label>
+                <input type="text" id="incTitle" placeholder="e.g. Suspicious login attempt" required>
+              </div>
+              <div class="field full">
+                <label>Description</label>
+                <textarea id="incDescription" rows="3" placeholder="Describe what happened..." required></textarea>
+              </div>
+              <div class="field">
+                <label>Category</label>
+                <select id="incCategory" required></select>
+              </div>
+              <div class="field">
+                <label>Severity</label>
+                <select id="incSeverity" required>
+                  <option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Affected System</label>
+                <input type="text" id="incSystemName" placeholder="e.g. Finance-Laptop-04">
+              </div>
+              <div class="field">
+                <label>Department</label>
+                <input type="text" id="incDepartment" placeholder="e.g. Finance">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:auto; margin-top:10px;">Submit Incident</button>
+            <div class="error-msg" id="incidentError"></div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ANALYTICS TAB -->
+      <div class="tab-section" id="analyticsTab">
+        <h1>Threat Analytics</h1>
+        <div class="chart-grid">
+          <div class="card">
+            <h3 style="font-size:13px;margin-bottom:12px;">Incidents by Category</h3>
+            <canvas id="categoryChart"></canvas>
+          </div>
+          <div class="card">
+            <h3 style="font-size:13px;margin-bottom:12px;">Severity Breakdown</h3>
+            <canvas id="severityChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:13px;margin-bottom:12px;">Status Overview</h3>
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

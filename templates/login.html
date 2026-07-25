@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SecureVault — Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <h1 id="formTitle">Welcome back</h1>
+      <p class="subtitle" id="formSubtitle">Sign in to log and track security incidents</p>
+
+      <form id="authForm">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="e.g. jane_doe" required>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="••••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Log In</button>
+        <div class="error-msg" id="errorMsg"></div>
+      </form>
+
+      <div class="toggle-link">
+        <span id="toggleText">Don't have an account? <span id="toggleLink">Register</span></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
