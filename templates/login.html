@@ -8,28 +8,33 @@
 <body>
   <div class="auth-wrapper">
     <div class="auth-card">
-      <h1 id="formTitle">Welcome back</h1>
-      <p class="subtitle" id="formSubtitle">Sign in to log and track security incidents</p>
-
-      <form id="authForm">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:40px;">🔐</div>
+        <h1 style="font-size:24px;margin-top:8px;">SecureVault</h1>
+        <p class="subtitle">Personal Cybersecurity Incident Tracker</p>
+      </div>
+      <h2 id="formTitle" style="font-size:18px;margin-bottom:6px;">Welcome back</h2>
+      <p class="subtitle" id="formSubtitle">Sign in to track your security incidents</p>
+      <form id="authForm" style="margin-top:20px;">
         <div class="field">
           <label>Username</label>
-          <input type="text" id="username" placeholder="e.g. jane_doe" required>
+          <input type="text" id="username" placeholder="e.g. damaris" required>
         </div>
         <div class="field">
           <label>Password</label>
-          <input type="password" id="password" placeholder="••••••••••" required>
+          <input type="password" id="password" placeholder="Enter your password" required>
         </div>
         <button type="submit" class="btn btn-primary" id="submitBtn">Log In</button>
         <div class="error-msg" id="errorMsg"></div>
       </form>
-
       <div class="toggle-link">
-        <span id="toggleText">Don't have an account? <span id="toggleLink">Register</span></span>
+        <span id="toggleText">
+          Don't have an account?
+          <span id="toggleLink" style="color:var(--cyan);cursor:pointer;font-weight:600;">Register</span>
+        </span>
       </div>
     </div>
   </div>
-
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

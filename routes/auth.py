@@ -51,7 +51,7 @@ def me():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "not logged in"}), 401
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "user not found"}), 404
     return jsonify(user.to_dict()), 200
@@ -62,7 +62,7 @@ def check_session():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "not logged in"}), 401
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "user not found"}), 404
     return jsonify(user.to_dict()), 200
