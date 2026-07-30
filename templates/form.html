@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SecureVault — Log Incident</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">🔐 SecureVault</div>
+    <div class="user" id="userLabel">...</div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <a href="/dashboard" class="nav-item">Dashboard</a>
+      <a href="/log-incident" class="nav-item active">Log Incident</a>
+      <a href="/analytics" class="nav-item">Analytics</a>
+    </div>
+    <div class="main">
+      <h1>Log New Incident</h1>
+      <div class="card">
+        <form id="incidentForm">
+          <div class="form-grid">
+            <div class="field full">
+              <label>Incident Title *</label>
+              <input type="text" id="incTitle" placeholder="e.g. Suspicious login attempt" required>
+            </div>
+            <div class="field full">
+              <label>Description *</label>
+              <textarea id="incDescription" rows="3" placeholder="Describe what happened..." required></textarea>
+            </div>
+            <div class="field">
+              <label>Category *</label>
+              <select id="incCategory" required></select>
+            </div>
+            <div class="field">
+              <label>Severity *</label>
+              <select id="incSeverity" required>
+                <option>Low</option>
+                <option>Medium</option>
+                <option selected>High</option>
+                <option>Critical</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Affected System</label>
+              <input type="text" id="incSystemName" placeholder="e.g. Finance-Laptop-04">
+            </div>
+            <div class="field">
+              <label>Department</label>
+              <input type="text" id="incDepartment" placeholder="e.g. Finance">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:auto;margin-top:16px;">
+            Submit Incident
+          </button>
+          <div class="error-msg" id="incidentError"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script>
+    (async function () {
+      try {
+        const me = await api("/me");
+        document.getElementById("userLabel").textContent = me.username + " ▾";
+      } catch { window.location.href = "/login"; return; }
+
+      const categories = await api("/categories");
+      const sel = document.getElementById("incCategory");
+      categories.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+
+      document.getElementById("incidentForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const errorEl = document.getElementById("incidentError");
+        errorEl.textContent = "";
+        const sysName = document.getElementById("incSystemName").value.trim();
+        const dept = document.getElementById("incDepartment").value.trim();
+        const payload = {
+          title: document.getElementById("incTitle").value.trim(),
+          description: document.getElementById("incDescription").value.trim(),
+          category_id: parseInt(document.getElementById("incCategory").value),
+          severity: document.getElementById("incSeverity").value,
+          affected_systems: sysName ? [{ system_name: sysName, department: dept }] : [],
+        };
+        try {
+          await api("/incidents", { method: "POST", body: JSON.stringify(payload) });
+          window.location.href = "/dashboard";
+        } catch (err) { errorEl.textContent = err.message; }
+      });
+    })();
+  </script>
+</body>
+</html>
