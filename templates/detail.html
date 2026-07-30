@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SecureVault — Incident Detail</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">🔐 SecureVault</div>
+    <div class="user" id="userLabel">...</div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <a href="/dashboard" class="nav-item active">Dashboard</a>
+      <a href="/log-incident" class="nav-item">Log Incident</a>
+      <a href="/analytics" class="nav-item">Analytics</a>
+    </div>
+    <div class="main">
+      <h1 id="incidentTitle">Loading...</h1>
+      <div class="card" id="incidentCard">Loading incident details...</div>
+      <div style="margin-top:16px;display:flex;gap:12px;">
+        <button class="btn btn-primary" id="advanceBtn">Advance Status</button>
+        <button class="btn btn-danger" id="deleteBtn">Delete Incident</button>
+        <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script>
+    const incidentId = {{ incident_id }};
+
+    async function loadIncident() {
+      try {
+        const me = await api("/me");
+        document.getElementById("userLabel").textContent = me.username + " ▾";
+      } catch { window.location.href = "/login"; return; }
+
+      const i = await api("/incidents/" + incidentId);
+      document.getElementById("incidentTitle").textContent = i.title;
+      const systems = i.affected_systems.length > 0
+        ? i.affected_systems.map(s => "<li>" + s.system_name + " — " + s.department + "</li>").join("")
+        : "<li>None listed</li>";
+      document.getElementById("incidentCard").innerHTML =
+        "<p><strong>Description:</strong> " + i.description + "</p>" +
+        "<p style='margin-top:10px;'><strong>Category:</strong> " + i.category + "</p>" +
+        "<p><strong>Severity:</strong> <span class='badge " + severityBadgeClass(i.severity) + "'>" + i.severity + "</span></p>" +
+        "<p><strong>Status:</strong> <span class='" + statusClass(i.status) + "'>" + i.status + "</span></p>" +
+        "<p><strong>Reported by:</strong> " + i.reported_by + "</p>" +
+        "<p><strong>Date:</strong> " + new Date(i.date_reported).toLocaleString() + "</p>" +
+        "<p style='margin-top:10px;'><strong>Affected Systems:</strong></p>" +
+        "<ul>" + systems + "</ul>";
+      document.getElementById("advanceBtn").dataset.status = i.status;
+    }
+
+    document.getElementById("advanceBtn").addEventListener("click", async (e) => {
+      const current = e.target.dataset.status;
+      const next = { Open: "In Progress", "In Progress": "Resolved", Resolved: "Open" }[current];
+      await api("/incidents/" + incidentId, { method: "PATCH", body: JSON.stringify({ status: next }) });
+      loadIncident();
+    });
+
+    document.getElementById("deleteBtn").addEventListener("click", async () => {
+      if (!confirm("Delete this incident? This cannot be undone.")) return;
+      await api("/incidents/" + incidentId, { method: "DELETE" });
+      window.location.href = "/dashboard";
+    });
+
+    loadIncident();
+  </script>
+</body>
+</html>
