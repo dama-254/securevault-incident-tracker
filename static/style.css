@@ -314,36 +314,14 @@ tr:hover td {
   color: white;
 }
 
-.badge-critical {
-  background: var(--red);
-}
+.badge-critical { background: var(--red); }
+.badge-high { background: var(--orange); }
+.badge-medium { background: #CA8A04; }
+.badge-low { background: var(--green); }
 
-.badge-high {
-  background: var(--orange);
-}
-
-.badge-medium {
-  background: #CA8A04;
-}
-
-.badge-low {
-  background: var(--green);
-}
-
-.status-open {
-  color: var(--red);
-  font-weight: 700;
-}
-
-.status-in-progress {
-  color: var(--orange);
-  font-weight: 700;
-}
-
-.status-resolved {
-  color: var(--green);
-  font-weight: 700;
-}
+.status-open { color: var(--red); font-weight: 700; }
+.status-in-progress { color: var(--orange); font-weight: 700; }
+.status-resolved { color: var(--green); font-weight: 700; }
 
 .row-actions button,
 .row-actions a {

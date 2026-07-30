@@ -6,10 +6,12 @@ async function api(path, options = {}) {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "request failed" }));
     throw new Error(err.error || "request failed");
   }
+
   return res.status === 204 ? null : res.json();
 }
 
@@ -21,7 +23,6 @@ function statusClass(status) {
   return { Open: "status-open", "In Progress": "status-in-progress", Resolved: "status-resolved" }[status] || "";
 }
 
-// ---------- LOGIN PAGE ----------
 if (document.getElementById("authForm")) {
   let mode = "login";
   const form = document.getElementById("authForm");
@@ -32,34 +33,39 @@ if (document.getElementById("authForm")) {
   const toggleText = document.getElementById("toggleText");
   const errorMsg = document.getElementById("errorMsg");
 
-  function rebindToggle() {
-    document.getElementById("toggleLink").addEventListener("click", handleToggle);
-  }
-
-  function handleToggle() {
-    mode = mode === "login" ? "register" : "login";
-    if (mode === "register") {
-      formTitle.textContent = "Create an account";
-      formSubtitle.textContent = "Register to start tracking security incidents";
-      submitBtn.textContent = "Register";
-      toggleText.innerHTML = "Already have an account? <span id=\"toggleLink\">Log In</span>";
-    } else {
-      formTitle.textContent = "Welcome back";
-      formSubtitle.textContent = "Sign in to log and track security incidents";
-      submitBtn.textContent = "Log In";
-      toggleText.innerHTML = "Don\'t have an account? <span id=\"toggleLink\">Register</span>";
-    }
+  function syncAuthMode() {
+    const isRegister = mode === "register";
+    formTitle.textContent = isRegister ? "Create an account" : "Welcome back";
+    formSubtitle.textContent = isRegister
+      ? "Register to start tracking security incidents"
+      : "Sign in to log and track security incidents";
+    submitBtn.textContent = isRegister ? "Register" : "Log In";
+    toggleText.innerHTML = isRegister
+      ? "Already have an account? <span id=\"toggleLink\">Log In</span>"
+      : "Don't have an account? <span id=\"toggleLink\">Register</span>";
     errorMsg.textContent = "";
-    rebindToggle();
+
+    const newToggleLink = document.getElementById("toggleLink");
+    if (newToggleLink) {
+      newToggleLink.addEventListener("click", () => {
+        mode = mode === "login" ? "register" : "login";
+        syncAuthMode();
+      });
+    }
   }
 
-  toggleLink.addEventListener("click", handleToggle);
+  toggleLink.addEventListener("click", () => {
+    mode = mode === "login" ? "register" : "login";
+    syncAuthMode();
+  });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorMsg.textContent = "";
+
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
+
     try {
       await api("/" + mode, { method: "POST", body: JSON.stringify({ username, password }) });
       if (mode === "register") {
@@ -72,29 +78,41 @@ if (document.getElementById("authForm")) {
   });
 }
 
-// ---------- DASHBOARD PAGE ----------
 if (document.getElementById("incidentsTableBody")) {
   let categories = [];
   let charts = {};
   let currentPage = 1;
   const perPage = 10;
 
-  async function init() {
+  async function initDashboard() {
     try {
       const me = await api("/me");
-      document.getElementById("userLabel").textContent = me.username + " ▾";
+      const userLabel = document.getElementById("userLabel");
+      if (userLabel) userLabel.textContent = me.username + " ▾";
     } catch {
       window.location.href = "/login";
       return;
     }
 
-    // Logout button
-    document.getElementById("userLabel").addEventListener("click", async () => {
-      if (confirm("Log out?")) {
-        await api("/logout", { method: "POST" });
-        window.location.href = "/login";
-      }
-    });
+    const userLabel = document.getElementById("userLabel");
+    if (userLabel) {
+      userLabel.addEventListener("click", async () => {
+        if (confirm("Log out?")) {
+          await api("/logout", { method: "POST" });
+          window.location.href = "/login";
+        }
+      });
+    }
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        if (confirm("Are you sure you want to logout?")) {
+          await api("/logout", { method: "POST" });
+          window.location.href = "/login";
+        }
+      });
+    }
 
     categories = await api("/categories");
     populateCategorySelects();
@@ -110,6 +128,7 @@ if (document.getElementById("incidentsTableBody")) {
     const incCat = document.getElementById("incCategory");
     filterCat.innerHTML = "<option value=\"\">Category: All</option>";
     incCat.innerHTML = "";
+
     categories.forEach((c) => {
       filterCat.innerHTML += "<option value=\"" + c.id + "\">" + c.name + "</option>";
       incCat.innerHTML += "<option value=\"" + c.id + "\">" + c.name + "</option>";
@@ -123,9 +142,7 @@ if (document.getElementById("incidentsTableBody")) {
         document.querySelectorAll(".tab-section").forEach((s) => s.classList.remove("active"));
         btn.classList.add("active");
         const tab = document.getElementById(btn.dataset.tab);
-        if (tab) {
-          tab.classList.add("active");
-        }
+        if (tab) tab.classList.add("active");
         if (btn.dataset.tab === "analyticsTab") loadStats(true);
       });
     });
@@ -133,7 +150,9 @@ if (document.getElementById("incidentsTableBody")) {
 
   function setupFilters() {
     ["filterSeverity", "filterStatus", "filterCategory"].forEach((id) => {
-      document.getElementById(id).addEventListener("change", () => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("change", () => {
         currentPage = 1;
         loadIncidents();
       });
@@ -154,7 +173,6 @@ if (document.getElementById("incidentsTableBody")) {
 
     try {
       const data = await api("/incidents?" + params.toString());
-      // handle both paginated {incidents:[]} and plain array
       const incidents = Array.isArray(data) ? data : (data.incidents || []);
       const total = Array.isArray(data) ? incidents.length : (data.total || 0);
       const pages = Array.isArray(data) ? 1 : (data.pages || 1);
@@ -168,21 +186,20 @@ if (document.getElementById("incidentsTableBody")) {
   function renderTable(incidents) {
     const tbody = document.getElementById("incidentsTableBody");
     if (incidents.length === 0) {
-      tbody.innerHTML = "<tr><td colspan=\"6\" style=\"text-align:center;color:#888;padding:30px\">No incidents found. Log your first incident!</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;color:#888;padding:30px;'>No incidents found. Log your first incident.</td></tr>";
       return;
     }
-    tbody.innerHTML = incidents.map((i) =>
+
+    tbody.innerHTML = incidents.map((i) => (
       "<tr>" +
-      "<td>" + i.title + "</td>" +
+      "<td><a href='/incident/" + i.id + "' style='color:var(--teal);font-weight:600;'>" + i.title + "</a></td>" +
       "<td>" + (i.category || "-") + "</td>" +
-      "<td><span class=\"badge " + severityBadgeClass(i.severity) + "\">" + i.severity + "</span></td>" +
-      "<td class=\"" + statusClass(i.status) + "\">" + i.status + "</td>" +
+      "<td><span class='badge " + severityBadgeClass(i.severity) + "'>" + i.severity + "</span></td>" +
+      "<td class='" + statusClass(i.status) + "'>" + i.status + "</td>" +
       "<td>" + new Date(i.date_reported).toLocaleDateString() + "</td>" +
-      "<td class=\"row-actions\">" +
-      "<button class=\"btn btn-outline\" onclick=\"cycleStatus(" + i.id + ", \'" + i.status + "\')\">Advance</button>" +
-      "<button class=\"btn btn-danger\" onclick=\"deleteIncident(" + i.id + ")\">Delete</button>" +
-      "</td></tr>"
-    ).join("");
+      "<td class='row-actions'><button class='btn btn-outline' onclick=\"cycleStatus(" + i.id + ", '" + i.status + "')\">Advance</button> <button class='btn btn-danger' onclick=\"deleteIncident(" + i.id + ")\">Delete</button></td>" +
+      "</tr>"
+    )).join("");
   }
 
   function renderPagination(total, pages) {
@@ -191,12 +208,18 @@ if (document.getElementById("incidentsTableBody")) {
       el = document.createElement("div");
       el.id = "pagination";
       el.style.cssText = "display:flex;gap:8px;margin-top:12px;align-items:center;";
-      document.querySelector(".card").appendChild(el);
+      const card = document.querySelector(".card");
+      if (card) card.appendChild(el);
     }
-    if (pages <= 1) { el.innerHTML = ""; return; }
-    let html = "<span style=\"font-size:12px;color:#888\">Page " + currentPage + " of " + pages + "</span>";
-    if (currentPage > 1) html += "<button class=\"btn btn-outline\" onclick=\"changePage(" + (currentPage - 1) + ")\">Prev</button>";
-    if (currentPage < pages) html += "<button class=\"btn btn-outline\" onclick=\"changePage(" + (currentPage + 1) + ")\">Next</button>";
+
+    if (!el || pages <= 1) {
+      if (el) el.innerHTML = "";
+      return;
+    }
+
+    let html = "<span style='font-size:12px;color:#888;'>Page " + currentPage + " of " + pages + "</span>";
+    if (currentPage > 1) html += "<button class='btn btn-outline' onclick=\"changePage(" + (currentPage - 1) + ")\">Prev</button>";
+    if (currentPage < pages) html += "<button class='btn btn-outline' onclick=\"changePage(" + (currentPage + 1) + ")\">Next</button>";
     el.innerHTML = html;
   }
 
@@ -228,14 +251,17 @@ if (document.getElementById("incidentsTableBody")) {
   };
 
   function setupIncidentForm() {
-    document.getElementById("incidentForm").addEventListener("submit", async (e) => {
+    const form = document.getElementById("incidentForm");
+    if (!form) return;
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById("incidentError");
       errorEl.textContent = "";
 
       const title = document.getElementById("incTitle").value.trim();
       const description = document.getElementById("incDescription").value.trim();
-      const category_id = parseInt(document.getElementById("incCategory").value);
+      const category_id = parseInt(document.getElementById("incCategory").value, 10);
       const severity = document.getElementById("incSeverity").value;
       const sysName = document.getElementById("incSystemName").value.trim();
       const dept = document.getElementById("incDepartment").value.trim();
@@ -255,9 +281,9 @@ if (document.getElementById("incidentsTableBody")) {
 
       try {
         await api("/incidents", { method: "POST", body: JSON.stringify(payload) });
-        e.target.reset();
-        // switch back to dashboard tab
-        document.querySelector("[data-tab=\"dashboardTab\"]").click();
+        form.reset();
+        const dashboardTab = document.querySelector("[data-tab='dashboardTab']");
+        if (dashboardTab) dashboardTab.click();
         await loadIncidents();
         await loadStats();
         alert("Incident logged successfully!");
@@ -273,11 +299,14 @@ if (document.getElementById("incidentsTableBody")) {
       const statCounts = { Open: 0, "In Progress": 0, Resolved: 0 };
       stats.by_status.forEach((s) => (statCounts[s.status] = s.count));
 
-      document.getElementById("statsGrid").innerHTML =
-        "<div class=\"stat-card\"><div class=\"value\" style=\"color:var(--red)\">" + statCounts.Open + "</div><div class=\"label\">Open Incidents</div></div>" +
-        "<div class=\"stat-card\"><div class=\"value\" style=\"color:var(--orange)\">" + statCounts["In Progress"] + "</div><div class=\"label\">In Progress</div></div>" +
-        "<div class=\"stat-card\"><div class=\"value\" style=\"color:var(--green)\">" + statCounts.Resolved + "</div><div class=\"label\">Resolved</div></div>" +
-        "<div class=\"stat-card\"><div class=\"value\" style=\"color:var(--teal)\">" + stats.total_incidents + "</div><div class=\"label\">Total Incidents</div></div>";
+      const statsGrid = document.getElementById("statsGrid");
+      if (statsGrid) {
+        statsGrid.innerHTML =
+          "<div class='stat-card'><div class='value' style='color:var(--red);'>" + statCounts.Open + "</div><div class='label'>Open Incidents</div></div>" +
+          "<div class='stat-card'><div class='value' style='color:var(--orange);'>" + statCounts["In Progress"] + "</div><div class='label'>In Progress</div></div>" +
+          "<div class='stat-card'><div class='value' style='color:var(--green);'>" + statCounts.Resolved + "</div><div class='label'>Resolved</div></div>" +
+          "<div class='stat-card'><div class='value' style='color:var(--teal);'>" + stats.total_incidents + "</div><div class='label'>Total Incidents</div></div>";
+      }
 
       if (renderCharts) renderAllCharts(stats);
     } catch (err) {
@@ -298,7 +327,7 @@ if (document.getElementById("incidentsTableBody")) {
         type: "doughnut",
         data: {
           labels: stats.by_category.map((c) => c.category),
-          datasets: [{ data: stats.by_category.map((c) => c.count), backgroundColor: ["#00B4D8","#0891B2","#F59E0B","#DC2626","#16A34A","#7C3AED"] }],
+          datasets: [{ data: stats.by_category.map((c) => c.count), backgroundColor: ["#00B4D8", "#0891B2", "#F59E0B", "#DC2626", "#16A34A", "#7C3AED"] }],
         },
         options: { plugins: { legend: { position: "bottom" } } },
       });
@@ -309,7 +338,7 @@ if (document.getElementById("incidentsTableBody")) {
         type: "bar",
         data: {
           labels: stats.by_severity.map((s) => s.severity),
-          datasets: [{ label: "Count", data: stats.by_severity.map((s) => s.count), backgroundColor: ["#DC2626","#F59E0B","#CA8A04","#16A34A"] }],
+          datasets: [{ label: "Count", data: stats.by_severity.map((s) => s.count), backgroundColor: ["#DC2626", "#F59E0B", "#CA8A04", "#16A34A"] }],
         },
         options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
       });
@@ -327,5 +356,5 @@ if (document.getElementById("incidentsTableBody")) {
     }
   }
 
-  init();
+  initDashboard();
 }
