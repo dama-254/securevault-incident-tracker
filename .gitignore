@@ -1,3 +1,8 @@
-code_review.txt
-.env
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
 instance/
+cookies.txt
+.env
+code_review.txt

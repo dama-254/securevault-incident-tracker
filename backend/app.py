@@ -4,13 +4,15 @@ from models import db, Category
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.sqlite"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = "dev-secret-key-change-in-production"
+    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SECURE"] = True
 
     db.init_app(app)
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, origins=["https://YOUR-VERCEL-URL.vercel.app"])
 
     from routes.auth import auth_bp
     from routes.incidents import incidents_bp
@@ -48,17 +50,12 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        seed_categories()
+        from seed import seed_data
+        seed_data()
 
     return app
 
 
-def seed_categories():
-    defaults = ["Phishing", "Malware", "DDoS", "Social Engineering", "Data Breach", "Ransomware"]
-    for name in defaults:
-        if not Category.query.filter_by(name=name).first():
-            db.session.add(Category(name=name))
-    db.session.commit()
 
 
 app = create_app()
