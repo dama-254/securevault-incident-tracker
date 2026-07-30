@@ -1,4 +1,4 @@
-const API = "";
+const API = "https://securevault-incident-tracker.onrender.com";
 
 async function api(path, options = {}) {
   const res = await fetch(API + path, {
