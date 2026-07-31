@@ -1,10 +1,9 @@
-from flask import Flask, render_template
+from flask import Flask, jsonify
 from flask_cors import CORS
 from models import db, Category
 
-
 def create_app():
-    app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
+    app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.sqlite"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = "dev-secret-key-change-in-production"
@@ -12,7 +11,7 @@ def create_app():
     app.config["SESSION_COOKIE_SECURE"] = True
 
     db.init_app(app)
-    CORS(app, supports_credentials=True, origins=["https://YOUR-VERCEL-URL.vercel.app"])
+    CORS(app, supports_credentials=True, origins=["https://securevault-app-six.vercel.app", "http://127.0.0.1:3000", "http://localhost:3000"])
 
     from routes.auth import auth_bp
     from routes.incidents import incidents_bp
@@ -26,27 +25,7 @@ def create_app():
 
     @app.route("/")
     def index():
-        return render_template("index.html")
-
-    @app.route("/login")
-    def login_page():
-        return render_template("login.html")
-
-    @app.route("/dashboard")
-    def dashboard_page():
-        return render_template("dashboard.html")
-
-    @app.route("/log-incident")
-    def log_incident_page():
-        return render_template("form.html")
-
-    @app.route("/analytics")
-    def analytics_page():
-        return render_template("analytics.html")
-
-    @app.route("/incident/<int:incident_id>")
-    def incident_detail_page(incident_id):
-        return render_template("detail.html", incident_id=incident_id)
+        return jsonify({"status": "SecureVault API is running"}), 200
 
     with app.app_context():
         db.create_all()
@@ -54,8 +33,6 @@ def create_app():
         seed_data()
 
     return app
-
-
 
 
 app = create_app()

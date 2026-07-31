@@ -65,7 +65,7 @@ if (document.getElementById("authForm")) {
       if (mode === "register") {
         await api("/login", { method: "POST", body: JSON.stringify({ username, password }) });
       }
-      window.location.href = "/dashboard";
+      window.location.href = "dashboard.html";
     } catch (err) {
       errorMsg.textContent = err.message;
     }
@@ -84,7 +84,7 @@ if (document.getElementById("incidentsTableBody")) {
       const me = await api("/me");
       document.getElementById("userLabel").textContent = me.username + " ▾";
     } catch {
-      window.location.href = "/login";
+      window.location.href = "login.html";
       return;
     }
 
@@ -92,7 +92,7 @@ if (document.getElementById("incidentsTableBody")) {
     document.getElementById("userLabel").addEventListener("click", async () => {
       if (confirm("Log out?")) {
         await api("/logout", { method: "POST" });
-        window.location.href = "/login";
+        window.location.href = "login.html";
       }
     });
 
