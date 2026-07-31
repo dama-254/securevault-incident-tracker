@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: securevault-incident-tracker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --config gunicorn.conf.py
+    envVars:
+      - key: SECRET_KEY
+        value: securevault-production-secret-2026
+      - key: PYTHON_VERSION
+        value: 3.12.3
