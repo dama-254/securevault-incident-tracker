@@ -4,6 +4,137 @@
   <meta charset="UTF-8">
   <title>SecureVault — Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo"> SecureVault</div>
+    <div class="user" id="userLabel">...</div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <a href="/dashboard" class="nav-item active">Dashboard</a>
+      <a href="/log-incident" class="nav-item">Log Incident</a>
+      <a href="/analytics" class="nav-item">Analytics</a>
+    </div>
+    <div class="main">
+      <h1>Incident Dashboard</h1>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="card">
+        <div class="filters">
+          <select id="filterSeverity">
+            <option value="">Severity: All</option>
+            <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+          </select>
+          <select id="filterStatus">
+            <option value="">Status: All</option>
+            <option>Open</option><option>In Progress</option><option>Resolved</option>
+          </select>
+          <select id="filterCategory">
+            <option value="">Category: All</option>
+          </select>
+          <div class="spacer"></div>
+          <a href="/log-incident" class="btn btn-primary" style="width:auto;">+ Log Incident</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th><th>Category</th><th>Severity</th>
+              <th>Status</th><th>Reported</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="incidentsTableBody"></tbody>
+        </table>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+          <button class="btn btn-outline" id="prevPage">← Previous</button>
+          <span id="pageLabel" style="font-size:12px;color:var(--gray);"></span>
+          <button class="btn btn-outline" id="nextPage">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script>
+    let categories = [];
+    let currentPage = 1;
+
+    async function init() {
+      try {
+        const me = await api("/me");
+        document.getElementById("userLabel").textContent = me.username + " ▾";
+      } catch { window.location.href = "/login"; return; }
+
+      categories = await api("/categories");
+      const filterCat = document.getElementById("filterCategory");
+      categories.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.name;
+        filterCat.appendChild(opt);
+      });
+
+      await loadStats();
+      await loadIncidents();
+
+      ["filterSeverity", "filterStatus", "filterCategory"].forEach(id => {
+        document.getElementById(id).addEventListener("change", () => { currentPage = 1; loadIncidents(); });
+      });
+
+      document.getElementById("prevPage").addEventListener("click", () => {
+        if (currentPage > 1) { currentPage--; loadIncidents(); }
+      });
+      document.getElementById("nextPage").addEventListener("click", () => {
+        currentPage++; loadIncidents();
+      });
+    }
+
+    async function loadIncidents() {
+      const severity = document.getElementById("filterSeverity").value;
+      const status = document.getElementById("filterStatus").value;
+      const category_id = document.getElementById("filterCategory").value;
+
+      const params = new URLSearchParams({ page: currentPage, per_page: 10 });
+      if (severity) params.set("severity", severity);
+      if (status) params.set("status", status);
+      if (category_id) params.set("category_id", category_id);
+
+      const data = await api("/incidents?" + params.toString());
+      renderTable(data.incidents);
+      document.getElementById("pageLabel").textContent =
+        "Page " + data.page + " of " + (data.pages || 1) + " (" + data.total + " total)";
+    }
+
+    function renderTable(incidents) {
+      const tbody = document.getElementById("incidentsTableBody");
+      if (incidents.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;color:#888;padding:30px;'>No incidents found. <a href='/log-incident' style='color:var(--cyan);'>Log your first incident!</a></td></tr>";
+        return;
+      }
+      tbody.innerHTML = incidents.map(i =>
+        "<tr>" +
+        "<td><a href='/incident/" + i.id + "' style='color:var(--teal);font-weight:600;'>" + i.title + "</a></td>" +
+        "<td>" + (i.category || "-") + "</td>" +
+        "<td><span class='badge " + severityBadgeClass(i.severity) + "'>" + i.severity + "</span></td>" +
+        "<td class='" + statusClass(i.status) + "'>" + i.status + "</td>" +
+        "<td>" + new Date(i.date_reported).toLocaleDateString() + "</td>" +
+        "<td class='row-actions'><a class='btn btn-outline' href='/incident/" + i.id + "'>View</a></td>" +
+        "</tr>"
+      ).join("");
+    }
+
+    async function loadStats() {
+      const stats = await api("/incidents/stats");
+      const counts = { Open: 0, "In Progress": 0, Resolved: 0 };
+      stats.by_status.forEach(s => counts[s.status] = s.count);
+      document.getElementById("statsGrid").innerHTML =
+        "<div class='stat-card'><div class='value' style='color:var(--red);'>" + counts.Open + "</div><div class='label'>Open Incidents</div></div>" +
+        "<div class='stat-card'><div class='value' style='color:var(--orange);'>" + counts["In Progress"] + "</div><div class='label'>In Progress</div></div>" +
+        "<div class='stat-card'><div class='value' style='color:var(--green);'>" + counts.Resolved + "</div><div class='label'>Resolved</div></div>" +
+        "<div class='stat-card'><div class='value' style='color:var(--teal);'>" + stats.total_incidents + "</div><div class='label'>Total Incidents</div></div>";
+    }
+
+    init();
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>

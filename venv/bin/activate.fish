@@ -33,6 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
+set -gx VIRTUAL_ENV /home/enock/securevault-incident-tracker/venv
 set -gx VIRTUAL_ENV /home/damaris/Documents/securevault-incident-tracker/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
