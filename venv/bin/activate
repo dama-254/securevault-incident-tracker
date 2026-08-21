@@ -43,6 +43,10 @@ if [ "${OSTYPE:-}" = "cygwin" ] || [ "${OSTYPE:-}" = "msys" ] ; then
 else
     # use the path as-is
     export VIRTUAL_ENV=/home/enock/securevault-incident-tracker/venv
+    export VIRTUAL_ENV=$(cygpath /home/damaris/Documents/securevault-incident-tracker/venv)
+else
+    # use the path as-is
+    export VIRTUAL_ENV=/home/damaris/Documents/securevault-incident-tracker/venv
 fi
 
 _OLD_VIRTUAL_PATH="$PATH"
